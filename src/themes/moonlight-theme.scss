@@ -1,0 +1,50 @@
+@import '../ui-deni-treeview.vars.scss';
+@import 'base-theme.scss';
+
+.ui-deni-treeview-container.moonlight {
+  background-color: darken($moonlight, 50%) !important;
+}
+
+.ui-deni-treeview-item-container.moonlight {
+  //@include set-theme($metro);
+
+  color: lighten($base-color, 15%) !important;
+
+  &:hover {
+    background-color: transparent !important;
+  }
+
+  &.selected {
+    @include gradient-background(#E59E06);
+    outline-color: darken($base-color, 5%) !important;
+    color: darken($base-color, 80%) !important;
+  }
+  .checkbox {
+    border-color: lighten($base-color, 30%) !important;
+    &.selected {
+      //border-color: darken($base-color, 20%) !important;
+      background-color: transparent;
+    }
+  }
+  .expand-button {
+    color: lighten($base-color, 15%) !important;
+  }
+  .icon-and-text {
+    &:hover {
+      background-color: transparent !important;
+    }
+    &.selected {
+      @include gradient-background(#E59E06);
+      border-color: darken($base-color, 2%);
+      color: darken($base-color, 65%);
+    }
+    .icon {
+      background-image: $closed-folder-icon-metro-16;
+
+      &.expanded {
+        background-image: $opened-folder-icon-metro-16;
+      }
+    }
+  }
+
+}

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" type="text/css" href="./dist/ui-deni-treeview.min.css">
+</head>
+
+<style>
+	.treeview {
+		height: 400px;
+		width: 100%;
+		border: solid 1px silver;
+		display: block;
+	}
+	.response {
+		margin-top: 2px;
+		border: solid 1px orange;
+	}
+	ul {
+		font-family: arial;
+		color: #505a7c;
+	}
+
+</style>
+
+<body ng-app="exampleApp">
+
+	<section ng-controller="exampleController as ctrl">
+
+		<button ng-click="ctrl.clickButton1()">Selected Item</button>
+
+		<select ng-model="ctrl.theme">
+		  <option value="classic">Classic</option>
+			<option value="metro">Metro</option>
+			<option value="moonlight">Moonlight</option>
+			<option value="purple">Purple</option>
+			<option value="green">Green</option>
+		  <option value="orange">Orange</option>
+		  <option value="red">Red</option>
+		  <option value="silver">Silver</option>
+		</select>
+
+		<ul>
+				<li><b>Lazy Load:</b> false</li>
+				<li><b>Checkbox:</b> true</li>
+				<li><b>Row Select:</b> true</li>
+		</ul>
+
+    <ui-deni-treeview id="treeview1" class="treeview" items="ctrl.items" show-icon=true theme="ctrl.theme" checkbox=true show-root=true select-row=false></ui-deni-treeview>
+		<div id="response" class="response"></div>
+  </section>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.2/angular.min.js"></script>
+
+	<script src="./dist/ui-deni-treeview.js"></script>
+
+	<script src="script.js"></script>
+</body>
+</html>

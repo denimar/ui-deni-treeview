@@ -1,0 +1,21 @@
+{
+  "name": "ui-deni-treeview",
+  "description": "Angular Treeview",
+  "main": "index.js",
+  "authors": [
+    "Denimar de Moraes"
+  ],
+  "license": "ISC",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+    "jquery": "^3.1.1",
+    "angular": "^1.6.0"
+  }
+}

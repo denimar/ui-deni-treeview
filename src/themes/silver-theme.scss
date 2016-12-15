@@ -1,0 +1,17 @@
+@import '../ui-deni-treeview.vars.scss';
+@import 'base-theme.scss';
+
+.ui-deni-treeview-item-container.silver {
+  @include set-theme($silver);
+
+  .icon-and-text {
+    .icon {
+      background-image: $closed-folder-icon-silver-16;
+
+      &.expanded {
+        background-image: $opened-folder-icon-silver-16;
+      }
+    }
+  }
+
+}
