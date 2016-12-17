@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" type="text/css" href="./dist/ui-deni-treeview.css">
+</head>
+
+<style>
+	.treeview {
+		height: 400px;
+		width: 600px;
+		margin-top: 4px;
+	}
+	label {
+		font-family: arial,tahoma;
+		font-size: 12px;
+	}
+</style>
+
+<body ng-app="exampleApp">
+
+	<section ng-controller="exampleController as ctrl">
+
+		<label>
+			<b>Theme :</b>
+			<select ng-model="ctrl.theme">
+			  <option value="classic">Classic</option>
+				<option value="metro">Metro</option>
+				<option value="moonlight">Moonlight</option>
+				<option value="purple">Purple</option>
+				<option value="green">Green</option>
+			  <option value="orange">Orange</option>
+			  <option value="red">Red</option>
+			  <option value="silver">Silver</option>
+			</select>
+		</label>
+
+    <ui-deni-treeview class="treeview" theme="ctrl.theme" lazy-load=true url="'http://fakedata-denimarm.rhcloud.com/data?type=countries'"></ui-deni-treeview>
+
+  </section>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.2/angular.min.js"></script>
+
+	<script src="./dist/ui-deni-treeview.js"></script>
+
+	<script src="script.js"></script>
+</body>
+</html>

@@ -27,8 +27,8 @@
 
       //
       scope.$on('onload', function (event, item, callbackFunction) {
-        event.stopPropagation();
-        scope.$emit('onloadchildren', item, callbackFunction);
+        //event.stopPropagation();
+        //scope.$emit('onload', item, callbackFunction);
   		});
 
       //

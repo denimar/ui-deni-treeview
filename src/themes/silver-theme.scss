@@ -1,17 +1,22 @@
 @import '../ui-deni-treeview.vars.scss';
 @import 'base-theme.scss';
 
-.ui-deni-treeview-item-container.silver {
-  @include set-theme($silver);
+.ui-deni-treeview-container.silver {
+  border-color: lighten($silver, 2%);
 
-  .icon-and-text {
-    .icon {
-      background-image: $closed-folder-icon-silver-16;
+  .ui-deni-treeview-item-container.silver {
+    @include set-theme($silver);
 
-      &.expanded {
-        background-image: $opened-folder-icon-silver-16;
+    .icon-and-text {
+      .icon {
+        background-image: $closed-folder-icon-silver-16;
+
+        &.expanded {
+          background-image: $opened-folder-icon-silver-16;
+        }
       }
     }
+
   }
 
 }

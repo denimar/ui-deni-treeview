@@ -5,6 +5,8 @@
     $base-color: $theme-base-color;
     color: darken($base-color, 45%) !important;
 
+    border-color: darken($base-color, 10%) !important;
+
     &:hover {
       &.select-row {
         background-color: lighten($base-color, 20%);

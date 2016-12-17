@@ -7,6 +7,8 @@
   padding-bottom: 10px;
   overflow-x: hidden;
   overflow-y: auto;
+  border: solid 1px;
+  border-color: lighten($base-color, 2%);
 
   * {
     box-sizing: border-box;

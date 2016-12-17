@@ -39,9 +39,7 @@
   function uiDeniTreeviewItemRun($templateCache) {
 
     //ui-deni-treeview-item's template
-    $templateCache.put('ui-deni-treeview-item.view.html',
-    // '<div class="ui-deni-treeview-item-container ng-hide"  ng-show="!ctrl.item.hidden" ng-class="{ctr.theme, \'selected\' : ($parent.ctrl.selectRow && ctrl.isSelected($parent.ctrl, ctrl.item))}" ng-mousedown="ctrl.itemMousedown($parent.ctrl, this, ctrl.item)">\n' +
-    '<div class="ui-deni-treeview-item-container ng-hide"  ng-show="!ctrl.item.hidden" ng-class="ctrl.getNgClassItem($parent.ctrl, ctrl)" ng-mousedown="ctrl.itemMousedown($parent.ctrl, this, ctrl.item)">\n' + '  <div class="expand-button" ng-click="ctrl.expandButtonClick(this, ctrl.item)" ng-class="{\'hasChild\' : ctrl.hasChild, \'colapsed\' : !ctrl.item.expanded, \'expanded\' : ctrl.item.expanded, \'loading\' : ctrl.loading, \'selected\' : ctrl.isSelected($parent.ctrl, ctrl.item)}"></div>\n' + '  <div class="checkbox ng-hide" ng-click="ctrl.checkboxClick(this, ctrl.item)" ng-class="{\'checked\' : ctrl.isChecked(ctrl.item), \'selected\' : ctrl.isSelected($parent.ctrl, ctrl.item)}" ng-show="$parent.ctrl.checkbox">\n' + '    <div class="undetermined ng-hide" ng-show="ctrl.isUndetermined(ctrl.item)"></div>\n' + '  </div>\n' + '  <div class="icon-and-text" ng-class="{\'select-row\': $parent.ctrl.selectRow, \'selected\' : (!$parent.ctrl.selectRow && ctrl.isSelected($parent.ctrl, ctrl.item))}">\n' + '    <div class="icon ng-hide" ng-class="ctrl.getClassIcon(ctrl, ctrl.item)" ng-dblclick="ctrl.itemDoubleClick($parent.ctrl, this, ctrl.item)" ng-show="$parent.ctrl.showIcon"></div>\n' + '    <div class="text" ng-dblclick="ctrl.itemDoubleClick($parent.ctrl, this, ctrl.item)">\n' + '      <span class="text-inner unselectable" ng-bind="ctrl.item.text" unselectable="on"></span>\n' + '    </div>\n' + '  </div\n' + '</div>');
+    $templateCache.put('ui-deni-treeview-item.view.html', '<div class="ui-deni-treeview-item-container ng-hide"  ng-show="!ctrl.item.hidden" ng-class="ctrl.getNgClassItem($parent.ctrl, ctrl)" ng-mousedown="ctrl.itemMousedown($parent.ctrl, this, ctrl.item)">\n' + '  <div class="expand-button ng-hide" ng-click="ctrl.expandButtonClick(this, ctrl.item)" ng-class="ctrl.getNgClassExpandButton($parent.ctrl, ctrl)" ng-show="!ctrl.item.isLeaf"></div>\n' + '  <div class="checkbox ng-hide" ng-click="ctrl.checkboxClick(this, ctrl.item)" ng-class="ctrl.getNgClassCheckbox($parent.ctrl, ctrl)" ng-show="$parent.ctrl.checkbox">\n' + '    <div class="undetermined ng-hide" ng-show="ctrl.isUndetermined(ctrl.item)"></div>\n' + '  </div>\n' + '  <div class="icon-and-text" ng-class="{\'select-row\': $parent.ctrl.selectRow, \'selected\' : (!$parent.ctrl.selectRow && ctrl.isSelected($parent.ctrl, ctrl.item))}">\n' + '    <div class="icon ng-hide" ng-class="ctrl.getNgClassIcon(ctrl, ctrl.item)" ng-dblclick="ctrl.itemDoubleClick($parent.ctrl, this, ctrl.item)" ng-show="$parent.ctrl.showIcon"></div>\n' + '    <div class="text" ng-dblclick="ctrl.itemDoubleClick($parent.ctrl, this, ctrl.item)">\n' + '      <span class="text-inner unselectable" ng-bind="ctrl.item.text" unselectable="on"></span>\n' + '    </div>\n' + '  </div\n' + '</div>');
   }
 })();
 'use strict';
@@ -81,40 +79,59 @@
 
 (function () {
 
-    'use strict';
+  'use strict';
 
-    angular.module('uiDeniTreeview').service('uiDeniTreeviewApiService', uiDeniTreeviewApiService);
+  angular.module('uiDeniTreeview').service('uiDeniTreeviewApiService', uiDeniTreeviewApiService);
 
-    function uiDeniTreeviewApiService() {
+  function uiDeniTreeviewApiService() {
 
-        var vm = this;
+    var vm = this;
 
-        //
-        function _getApi(scope, uiDeniTreeviewService) {
+    //
+    function _getApi(scope, uiDeniTreeviewService) {
 
-            return {
-
-                //
-                getCheckedItems: function getCheckedItems() {
-                    return uiDeniTreeviewService.getCheckedItems(scope);
-                },
-
-                //
-                getSelectedItem: function getSelectedItem() {
-                    return uiDeniTreeviewService.getSelectedItem(scope);
-                }
-
-            };
-        };
+      return {
 
         //
-        vm.implementApi = function (scope, element, uiDeniTreeviewService) {
+        getCheckedItems: function getCheckedItems() {
+          return uiDeniTreeviewService.getCheckedItems(scope);
+        },
 
-            element.each(function () {
-                angular.element(this).init.prototype.api = _getApi(scope, uiDeniTreeviewService);
-            });
-        };
+        //
+        getSelectedItem: function getSelectedItem() {
+          return uiDeniTreeviewService.getSelectedItem(scope);
+        },
+
+        //
+        // item is a optional param that when it is set load will return just the children items.
+        //
+        load: function load(item) {
+          return uiDeniTreeviewService.load(scope, item);
+        },
+
+        //
+        // item is a optional param that when it is set load will return just the children items.
+        //
+        loadData: function loadData(data, item) {
+          return uiDeniTreeviewService.loadData(scope, data, item);
+        },
+
+        //
+        reload: function reload() {
+          return uiDeniTreeviewService.reload(scope);
+        }
+
+      };
     }
+
+    //
+    vm.implementApi = function (scope, element, uiDeniTreeviewService) {
+
+      element.each(function () {
+        angular.element(this).init.prototype.api = _getApi(scope, uiDeniTreeviewService);
+      });
+    };
+  }
 })();
 'use strict';
 
@@ -145,8 +162,8 @@
 
       //
       scope.$on('onload', function (event, item, callbackFunction) {
-        event.stopPropagation();
-        scope.$emit('onloadchildren', item, callbackFunction);
+        //event.stopPropagation();
+        //scope.$emit('onload', item, callbackFunction);
       });
 
       //
@@ -165,11 +182,98 @@
 
   angular.module('uiDeniTreeview').service('uiDeniTreeviewService', uiDeniTreeviewService);
 
-  uiDeniTreeviewService.$inject = ['uiDeniTreeviewEnum', 'uiDeniTreeviewApiService'];
+  uiDeniTreeviewService.$inject = ['$http', '$q', 'uiDeniTreeviewEnum', 'uiDeniTreeviewApiService', 'uiDeniTreeviewConstant'];
 
-  function uiDeniTreeviewService(uiDeniTreeviewEnum, uiDeniTreeviewApiService) {
+  function uiDeniTreeviewService($http, $q, uiDeniTreeviewEnum, uiDeniTreeviewApiService, uiDeniTreeviewConstant) {
 
     var vm = this;
+
+    vm.setDefaultValues = function (controller, element, uiDeniTreeviewConstant) {
+
+      //theme
+      controller.theme = controller.theme || 'classic';
+      element.addClass(controller.theme);
+
+      controller.showIcon = controller.showIcon || true;
+      controller.showRoot = controller.showRoot || false;
+      controller.selectRow = controller.selectRow || false;
+      controller.lazyLoad = controller.lazyLoad || false;
+      controller.marginItems = controller.marginItems || 30;
+
+      //should it load the data automatically?
+      controller.autoLoad = controller.autoLoad || true;
+
+      if (controller.url || controller.lazyLoad) {
+        //
+        if (controller.autoLoad) {
+          vm.load(controller.scope);
+        }
+      } else {
+        if (controller.items) {
+          _loadData(controller, uiDeniTreeviewConstant, controller.items);
+        }
+      }
+    };
+
+    //
+    // item is a optional param that when it is set load will return just the children items.
+    //
+    vm.load = function (scope, item) {
+      var deferred = $q.defer();
+
+      var config = {};
+
+      var currentItem = item || scope.ctrl.rootItem;
+      var itemToLoad = angular.copy(currentItem);
+
+      //
+      if (scope.ctrl.url) {
+        var dataConfig = {
+          params: {
+            lazyLoad: scope.ctrl.lazyLoad,
+            item: itemToLoad
+          }
+        };
+
+        $http.get(scope.ctrl.url, dataConfig).then(function (response) {
+          _loadData(scope.ctrl, uiDeniTreeviewConstant, response.data, item);
+          deferred.resolve(response.data);
+        }, function (response) {
+          var msg = 'Error loading data.';
+          throw new Error(msg);
+        });
+
+        //
+      } else if (scope.ctrl.lazyLoad) {
+        (function () {
+          delete currentItem['children'];
+          var watchItems = scope.$watch('ctrl.rootItem', function (newValue, oldValue) {
+            if (newValue !== oldValue) {
+              deferred.resolve(currentItem.children);
+              watchItems(); //unregister the watch
+            }
+          }, true);
+          scope.$emit('onload', currentItem);
+
+          //
+        })();
+      } else {
+        var msg = 'To use load function you must define lazyLoad:true or a valid url.';
+        console.error(msg);
+        deferred.reject(msg);
+      }
+
+      return deferred.promise;
+    };
+
+    vm.loadData = function (scope, data, item) {
+      _loadData(scope.ctrl, uiDeniTreeviewConstant, data, item);
+    };
+
+    //
+    vm.reload = function (scope) {
+      vm.load(scope);
+    };
 
     //
     // return only the last level
@@ -208,9 +312,36 @@
       return checkedItems;
     };
 
+    //
     vm.getSelectedItem = function (scope) {
       return scope.ctrl.selectedItem;
     };
+
+    //
+    // item is a optional param that when it is set data must be an array (children)
+    //
+    function _loadData(controller, uiDeniTreeviewConstant, data, item) {
+      //
+      var dataToLoad = data || [];
+
+      //
+      if (angular.isDefined(item)) {
+        //
+        if (angular.isArray(dataToLoad)) {
+          item.children = dataToLoad;
+        } else {
+          throw new Error('When item param is set the data must be an array.');
+        }
+      } else {
+        //
+        if (angular.isArray(dataToLoad)) {
+          controller.rootItem.children = dataToLoad;
+          //
+        } else {
+          controller.rootItem = angular.merge(uiDeniTreeviewConstant.ROOT_ITEM, dataToLoad);
+        }
+      }
+    }
 
     //
     function _refreshCheckboxStateChildren(item) {
@@ -233,9 +364,23 @@
 
   uiDeniTreeviewItemService.$inject = ['uiDeniTreeviewEnum'];
 
+  //
   function uiDeniTreeviewItemService(uiDeniTreeviewEnum) {
 
     var vm = this;
+
+    //
+    vm.setDefaultValues = function (scope, element) {
+      scope.ctrl.item.expanded = scope.ctrl.item.expanded || false;
+      scope.ctrl.hasChild = scope.ctrl.item.children || scope.$parent.ctrl.lazyLoad ? true : false;
+      scope.ctrl.root = scope.ctrl.item.root || false;
+
+      var leftPos = 5 + scope.ctrl.level * scope.$parent.ctrl.marginItems;
+      if (!scope.$parent.ctrl.showRoot) {
+        leftPos -= scope.$parent.ctrl.marginItems;
+      }
+      element.css('padding-left', leftPos + 'px');
+    };
 
     vm.getNgClassItem = function (parentController, controller) {
       var ngClass = [controller.theme];
@@ -250,6 +395,62 @@
       return ngClass;
     };
 
+    //
+    vm.getNgClassExpandButton = function (parentController, controller) {
+      var ngClass = [];
+
+      if (controller.hasChild) {
+        ngClass.push('hasChild');
+      }
+
+      if (controller.item.expanded) {
+        ngClass.push('expanded');
+      } else {
+        ngClass.push('colapsed');
+      }
+
+      if (controller.loading) {
+        ngClass.push('loading');
+      }
+
+      if (controller.isSelected(parentController, controller.item)) {
+        ngClass.push('selected');
+      }
+
+      return ngClass;
+    };
+
+    //
+    vm.getNgClassCheckbox = function (parentController, controller) {
+      var ngClass = [];
+
+      if (controller.isChecked(controller.item)) {
+        ngClass.push('checked');
+      }
+
+      if (controller.isSelected(parentController, controller.item)) {
+        ngClass.push('selected');
+      }
+
+      return ngClass;
+    };
+
+    //
+    vm.getNgClassIcon = function (controller, item) {
+      var ngClass = [];
+
+      if (item.isLeaf) {
+        ngClass.push('isleaf');
+      }
+
+      if (item.expanded) {
+        ngClass.push('expanded');
+      }
+
+      return ngClass;
+    };
+
+    //
     vm.expandButtonClick = function (scope, item) {
       var expanded = !item.expanded;
 
@@ -266,11 +467,11 @@
           };
 
           if (scope.$parent.ctrl.lazyLoad) {
+
             if (angular.isDefined(item.children)) {
               finishExpandRoutine();
             } else {
-              scope.$emit('onload', item, function (children) {
-                item.children = children;
+              scope.$parent.ctrl.element.api.load(item).then(function (dataLoaded) {
                 finishExpandRoutine();
               });
             }
@@ -284,14 +485,7 @@
       }
     };
 
-    vm.getClassIcon = function (controller, item) {
-      if (item.isLeaf) {
-        return 'isleaf';
-      } else if (item.expanded) {
-        return 'expanded';
-      }
-    };
-
+    //
     vm.checkboxClick = function (scope, item) {
       _setCheckboxStateByClicking(item);
       _refreshCheckboxStateChildren(item);
@@ -301,6 +495,7 @@
       scope.$emit('oncheck', item);
     };
 
+    //
     vm.itemMousedown = function (treeviewCtrl, scope, item) {
       var target = angular.element(event.target);
       var finishRoutine = function finishRoutine() {
@@ -434,6 +629,7 @@
   uiDeniTreeviewController.$inject = ['$scope', 'uiDeniTreeviewService', 'uiDeniTreeviewConstant'];
 
   function uiDeniTreeviewController($scope, uiDeniTreeviewService, uiDeniTreeviewConstant) {
+    this.scope = $scope;
     this.rootItem = uiDeniTreeviewConstant.ROOT_ITEM;
   }
 })();
@@ -449,6 +645,9 @@
 
   function uiDeniTreeviewItemController(uiDeniTreeviewItemService) {
     this.getNgClassItem = uiDeniTreeviewItemService.getNgClassItem;
+    this.getNgClassExpandButton = uiDeniTreeviewItemService.getNgClassExpandButton;
+    this.getNgClassCheckbox = uiDeniTreeviewItemService.getNgClassCheckbox;
+    this.getNgClassIcon = uiDeniTreeviewItemService.getNgClassIcon;
     this.expandButtonClick = uiDeniTreeviewItemService.expandButtonClick;
     this.checkboxClick = uiDeniTreeviewItemService.checkboxClick;
     this.itemMousedown = uiDeniTreeviewItemService.itemMousedown;
@@ -456,7 +655,6 @@
     this.isSelected = uiDeniTreeviewItemService.isSelected;
     this.isChecked = uiDeniTreeviewItemService.isChecked;
     this.isUndetermined = uiDeniTreeviewItemService.isUndetermined;
-    this.getClassIcon = uiDeniTreeviewItemService.getClassIcon;
   }
 })();
 'use strict';
@@ -475,8 +673,10 @@
       restrict: 'E',
       scope: {},
       bindToController: {
+        url: '=?',
+        autoLoad: '=?',
         checkbox: '=?',
-        items: '=',
+        items: '=?',
         lazyLoad: '=?',
         selectRow: '=?',
         showIcon: '=?',
@@ -493,7 +693,7 @@
         scope.ctrl.element = angular.element(element);
 
         //
-        _setDefaultValues(scope.ctrl, element, uiDeniTreeviewConstant);
+        uiDeniTreeviewService.setDefaultValues(scope.ctrl, element, uiDeniTreeviewConstant);
 
         //
         uiDeniTreeviewApiService.implementApi(scope, scope.ctrl.element, uiDeniTreeviewService);
@@ -502,24 +702,6 @@
         uiDeniTreeviewEventsService.implementEvents(scope);
       }
     };
-  }
-
-  function _setDefaultValues(controller, element, uiDeniTreeviewConstant) {
-
-    //theme
-    controller.theme = controller.theme || 'classic';
-    element.addClass(controller.theme);
-
-    controller.showIcon = controller.showIcon || true;
-    controller.showRoot = controller.showRoot || false;
-    controller.selectRow = controller.selectRow || false;
-    controller.lazyLoad = controller.lazyLoad || false;
-    controller.marginItems = controller.marginItems || 30;
-    if (angular.isArray(controller.items)) {
-      controller.rootItem.children = controller.items;
-    } else {
-      controller.rootItem = angular.merge(uiDeniTreeviewConstant.ROOT_ITEM, controller.items);
-    }
   }
 })();
 'use strict';
@@ -530,9 +712,9 @@
 
   angular.module('uiDeniTreeview').directive('uiDeniTreeviewItem', uiDeniTreeviewItem);
 
-  uiDeniTreeviewItem.$inject = ['$templateCache'];
+  uiDeniTreeviewItem.$inject = ['$templateCache', 'uiDeniTreeviewItemService'];
 
-  function uiDeniTreeviewItem($templateCache) {
+  function uiDeniTreeviewItem($templateCache, uiDeniTreeviewItemService) {
 
     return {
       restrict: 'E',
@@ -548,9 +730,11 @@
       replace: true,
       template: $templateCache.get('ui-deni-treeview-item.view.html'),
       link: function link(scope, element, attr) {
-        //
-        _setDefaultValues(scope, element);
 
+        //
+        uiDeniTreeviewItemService.setDefaultValues(scope, element);
+
+        //
         scope.$watch('ctrl.item.expanded', function (newValue, oldValue) {
           if (newValue !== oldValue) {
             scope.$emit('onexpand', scope.ctrl.item);
@@ -558,18 +742,5 @@
         });
       }
     };
-  }
-
-  function _setDefaultValues(scope, element) {
-    scope.ctrl.item.ctrl = scope.ctrl;
-    scope.ctrl.item.expanded = scope.ctrl.item.expanded || false;
-    scope.ctrl.hasChild = scope.ctrl.item.children || scope.$parent.ctrl.lazyLoad ? true : false;
-    scope.ctrl.root = scope.ctrl.item.root || false;
-
-    var leftPos = 5 + scope.ctrl.level * scope.$parent.ctrl.marginItems;
-    if (!scope.$parent.ctrl.showRoot) {
-      leftPos -= scope.$parent.ctrl.marginItems;
-    }
-    element.css('padding-left', leftPos + 'px');
   }
 })();

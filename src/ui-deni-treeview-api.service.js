@@ -23,11 +23,30 @@
         //
         getSelectedItem: function() {
           return uiDeniTreeviewService.getSelectedItem(scope);
-        }
+        },
+
+        //
+        // item is a optional param that when it is set load will return just the children items.
+        //
+        load: function(item) {
+          return uiDeniTreeviewService.load(scope, item);
+        },
+
+        //
+        // item is a optional param that when it is set load will return just the children items.
+        //
+        loadData: function(data, item) {
+          return uiDeniTreeviewService.loadData(scope, data, item);
+        },
+
+        //
+        reload: function() {
+          return uiDeniTreeviewService.reload(scope);
+        },
 
       };
 
-    };
+    }
 
     //
     vm.implementApi = function(scope, element, uiDeniTreeviewService) {

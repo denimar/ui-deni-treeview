@@ -8,9 +8,23 @@
 
   uiDeniTreeviewItemService.$inject = ['uiDeniTreeviewEnum'];
 
+  //
   function uiDeniTreeviewItemService(uiDeniTreeviewEnum) {
 
     let vm = this;
+
+    //
+    vm.setDefaultValues = function(scope, element) {
+      scope.ctrl.item.expanded = scope.ctrl.item.expanded || false;
+      scope.ctrl.hasChild = (scope.ctrl.item.children || scope.$parent.ctrl.lazyLoad) ? true : false;
+      scope.ctrl.root = scope.ctrl.item.root || false;
+
+      let leftPos = 5 + scope.ctrl.level * scope.$parent.ctrl.marginItems;
+      if (!scope.$parent.ctrl.showRoot) {
+        leftPos -= scope.$parent.ctrl.marginItems;
+      }
+      element.css('padding-left', leftPos + 'px');
+    };
 
     vm.getNgClassItem = function(parentController, controller) {
       let ngClass = [controller.theme];
@@ -25,6 +39,62 @@
       return ngClass;
     };
 
+    //
+    vm.getNgClassExpandButton = function(parentController, controller) {
+      let ngClass = [];
+
+      if (controller.hasChild) {
+        ngClass.push('hasChild');
+      }
+
+      if (controller.item.expanded) {
+        ngClass.push('expanded');
+      } else {
+        ngClass.push('colapsed');
+      }
+
+      if (controller.loading) {
+        ngClass.push('loading');
+      }
+
+      if (controller.isSelected(parentController, controller.item)) {
+        ngClass.push('selected');
+      }
+
+      return ngClass;
+    };
+
+    //
+    vm.getNgClassCheckbox = function(parentController, controller) {
+      let ngClass = [];
+
+      if (controller.isChecked(controller.item)) {
+        ngClass.push('checked');
+      }
+
+      if (controller.isSelected(parentController, controller.item)) {
+        ngClass.push('selected');
+      }
+
+      return ngClass;
+    };
+
+    //
+    vm.getNgClassIcon = function(controller, item) {
+      let ngClass = [];
+
+      if (item.isLeaf) {
+        ngClass.push('isleaf');
+      }
+
+      if (item.expanded) {
+        ngClass.push('expanded');
+      }
+
+      return ngClass;
+    };
+
+    //
     vm.expandButtonClick = function(scope, item) {
       let expanded = !item.expanded;
 
@@ -40,11 +110,11 @@
         };
 
         if (scope.$parent.ctrl.lazyLoad) {
+
           if (angular.isDefined(item.children)) {
             finishExpandRoutine();
           } else {
-            scope.$emit('onload', item, function(children) {
-              item.children = children;
+            scope.$parent.ctrl.element.api.load(item).then(function(dataLoaded) {
               finishExpandRoutine();
             });
           }
@@ -57,14 +127,7 @@
       }
     };
 
-    vm.getClassIcon = function(controller, item) {
-      if (item.isLeaf) {
-        return 'isleaf';
-      } else if (item.expanded) {
-        return 'expanded';
-      }
-    };
-
+    //
     vm.checkboxClick = function(scope, item) {
       _setCheckboxStateByClicking(item);
       _refreshCheckboxStateChildren(item);
@@ -74,6 +137,7 @@
       scope.$emit('oncheck', item);
     };
 
+    //
     vm.itemMousedown = function(treeviewCtrl, scope, item) {
       let target = angular.element(event.target);
       let finishRoutine = function() {

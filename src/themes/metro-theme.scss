@@ -3,46 +3,46 @@
 
 .ui-deni-treeview-container.metro {
   background-color: darken($metro, 50%) !important;
-}
+  border-color: lighten($metro, 2%);
 
-.ui-deni-treeview-item-container.metro {
-  //@include set-theme($metro);
-
-  color: lighten($base-color, 15%) !important;
-
-  &:hover {
-    background-color: transparent !important;
-  }
-
-  &.selected {
-    @include gradient-background(darken($base-color, 52%));
-    outline-color: darken($base-color, 5%) !important;
-  }
-  .checkbox {
-    border-color: lighten($base-color, 4%) !important;
-    &.selected {
-      border-color: darken($base-color, 15%) !important;
-      background-color: transparent;
-    }
-  }
-  .expand-button {
+  .ui-deni-treeview-item-container.metro {
     color: lighten($base-color, 15%) !important;
-  }
-  .icon-and-text {
+
     &:hover {
       background-color: transparent !important;
     }
-    &.selected {
-      @include gradient-background(darken($base-color, 42%));
-      border-color: darken($base-color, 2%);
-    }
-    .icon {
-      background-image: $closed-folder-icon-metro-16;
 
-      &.expanded {
-        background-image: $opened-folder-icon-metro-16;
+    &.selected {
+      @include gradient-background(darken($base-color, 52%));
+      outline-color: darken($base-color, 5%) !important;
+    }
+    .checkbox {
+      border-color: lighten($base-color, 4%) !important;
+      &.selected {
+        border-color: darken($base-color, 15%) !important;
+        background-color: transparent;
       }
     }
+    .expand-button {
+      color: lighten($base-color, 15%) !important;
+    }
+    .icon-and-text {
+      &:hover {
+        background-color: transparent !important;
+      }
+      &.selected {
+        @include gradient-background(darken($base-color, 42%));
+        border-color: darken($base-color, 2%);
+      }
+      .icon {
+        background-image: $closed-folder-icon-metro-16;
+
+        &.expanded {
+          background-image: $opened-folder-icon-metro-16;
+        }
+      }
+    }
+
   }
 
 }

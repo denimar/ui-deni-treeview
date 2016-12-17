@@ -10,6 +10,9 @@
 
   function uiDeniTreeviewItemController(uiDeniTreeviewItemService) {
     this.getNgClassItem = uiDeniTreeviewItemService.getNgClassItem;
+    this.getNgClassExpandButton = uiDeniTreeviewItemService.getNgClassExpandButton;
+    this.getNgClassCheckbox = uiDeniTreeviewItemService.getNgClassCheckbox;
+    this.getNgClassIcon = uiDeniTreeviewItemService.getNgClassIcon;
     this.expandButtonClick = uiDeniTreeviewItemService.expandButtonClick;
     this.checkboxClick = uiDeniTreeviewItemService.checkboxClick;
     this.itemMousedown = uiDeniTreeviewItemService.itemMousedown;
@@ -17,7 +20,6 @@
     this.isSelected = uiDeniTreeviewItemService.isSelected;
     this.isChecked = uiDeniTreeviewItemService.isChecked;
     this.isUndetermined = uiDeniTreeviewItemService.isUndetermined;
-    this.getClassIcon = uiDeniTreeviewItemService.getClassIcon;
   }
 
 })();
