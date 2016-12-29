@@ -1,3 +1,5 @@
+/** global: event */
+
 (function() {
 
   'use strict';
@@ -191,7 +193,7 @@
           if (angular.isDefined(item.children)) {
             finishExpandRoutine();
           } else {
-            scope.$parent.ctrl.element.api.load(item).then(function(dataLoaded) {
+            scope.$parent.ctrl.element.api.load(item).then(function() {
               finishExpandRoutine();
             });
           }
@@ -263,6 +265,7 @@
       if (angular.isDefined(controller.parent)) {
         return controller.parent.children;
       }
+      return null;
     }
 
     //
