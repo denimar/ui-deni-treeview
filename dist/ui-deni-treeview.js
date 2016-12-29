@@ -81,64 +81,6 @@
 
   'use strict';
 
-  angular.module('uiDeniTreeview').service('uiDeniTreeviewApiService', uiDeniTreeviewApiService);
-
-  function uiDeniTreeviewApiService() {
-
-    var vm = this;
-
-    //
-    function _getApi(scope, uiDeniTreeviewService) {
-
-      return {
-
-        //
-        getCheckedItems: function getCheckedItems() {
-          return uiDeniTreeviewService.getCheckedItems(scope);
-        },
-
-        //
-        getSelectedItem: function getSelectedItem() {
-          return uiDeniTreeviewService.getSelectedItem(scope);
-        },
-
-        //
-        // item is a optional param that when it is set load will return just the children items.
-        //
-        load: function load(item) {
-          return uiDeniTreeviewService.load(scope, item);
-        },
-
-        //
-        // item is a optional param that when it is set load will return just the children items.
-        //
-        loadData: function loadData(data, item) {
-          return uiDeniTreeviewService.loadData(scope, data, item);
-        },
-
-        //
-        reload: function reload() {
-          return uiDeniTreeviewService.reload(scope);
-        }
-
-      };
-    }
-
-    //
-    vm.implementApi = function (scope, element, uiDeniTreeviewService) {
-
-      element.each(function () {
-        angular.element(this).init.prototype.api = _getApi(scope, uiDeniTreeviewService);
-      });
-    };
-  }
-})();
-'use strict';
-
-(function () {
-
-  'use strict';
-
   angular.module('uiDeniTreeview').service('uiDeniTreeviewEventsService', uiDeniTreeviewEventsService);
 
   function uiDeniTreeviewEventsService() {
@@ -161,10 +103,12 @@
       });
 
       //
-      scope.$on('onload', function (event, item, callbackFunction) {
+      /*
+      scope.$on('onload', function (event, item, data) {
         //event.stopPropagation();
         //scope.$emit('onload', item, callbackFunction);
       });
+      */
 
       //
       scope.$on('onselect', function (event, item) {
@@ -176,15 +120,17 @@
 })();
 'use strict';
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 (function () {
 
   'use strict';
 
   angular.module('uiDeniTreeview').service('uiDeniTreeviewService', uiDeniTreeviewService);
 
-  uiDeniTreeviewService.$inject = ['$http', '$q', 'uiDeniTreeviewEnum', 'uiDeniTreeviewApiService', 'uiDeniTreeviewConstant'];
+  uiDeniTreeviewService.$inject = ['$http', '$q', '$timeout', 'uiDeniTreeviewEnum', 'uiDeniTreeviewApiService', 'uiDeniTreeviewConstant'];
 
-  function uiDeniTreeviewService($http, $q, uiDeniTreeviewEnum, uiDeniTreeviewApiService, uiDeniTreeviewConstant) {
+  function uiDeniTreeviewService($http, $q, $timeout, uiDeniTreeviewEnum, uiDeniTreeviewApiService, uiDeniTreeviewConstant) {
 
     var vm = this;
 
@@ -238,6 +184,9 @@
         $http.get(scope.ctrl.url, dataConfig).then(function (response) {
           _loadData(scope.ctrl, uiDeniTreeviewConstant, response.data, item);
           deferred.resolve(response.data);
+          $timeout(function () {
+            scope.$emit('onload', response.data);
+          });
         }, function (response) {
           var msg = 'Error loading data.';
           throw new Error(msg);
@@ -272,38 +221,38 @@
 
     //
     vm.reload = function (scope) {
-      vm.load(scope);
+      return vm.load(scope);
     };
 
     //
     // return only the last level
     // items array optional param
     //
-    vm.getCheckedItems = function (scope, items) {
+    vm.getCheckedItems = function (scope, children) {
       var checkedItems = [];
-      var itemsToAnalyze = items || scope.ctrl.items;
+      var itemsToAnalyze = children || scope.ctrl.rootItem.children;
 
       angular.forEach(itemsToAnalyze, function (item) {
 
-        if (item.type === 'VD') {
+        if (item.isLeaf) {
           if (item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED) {
-            checkedItems.push(item.id);
+            checkedItems.push(item);
           }
         } else {
           //when is checked but not expanded must see who are its children
           if (angular.isDefined(item.state) && item.state !== uiDeniTreeviewEnum.CHECKBOX_STATE.UNCHECKED) {
 
-            var children = item.children;
+            var itemChildren = item.children;
             if (!item.expanded && item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED) {
               var itemCopy = angular.copy(item);
               scope.$emit('onexpanditem', itemCopy);
-              children = itemCopy.children;
+              itemChildren = itemCopy.children;
               _refreshCheckboxStateChildren(itemCopy);
             }
 
-            if (children) {
-              var selecteds = vm.getCheckedItems(scope, children);
-              checkedItems = checkedItems.concat(selecteds);
+            if (itemChildren) {
+              var checkeds = vm.getCheckedItems(scope, itemChildren);
+              checkedItems = checkedItems.concat(checkeds);
             }
           }
         }
@@ -313,9 +262,241 @@
     };
 
     //
+    // itemToCheck can be passed as a "id" or as a "object" ex:
+    //
+    //  treeviewEl.api.checkItem(357) //357 is a id value or
+    //  treeviewEl.api.checkItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+    //
+    vm.checkItem = function (scope, itemToCheck) {
+      var item = vm.findItem(scope, itemToCheck);
+      //
+      scope.$broadcast('checkitem', item);
+    };
+
+    //
+    vm.checkAll = function (scope, children) {
+      scope.$broadcast('checkall');
+    };
+
+    //
+    // itemToUncheck can be passed as a "id" or as a "object" ex:
+    //
+    //  treeviewEl.api.uncheckItem(357) //357 is a id value or
+    //  treeviewEl.api.uncheckItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+    //
+    vm.uncheckItem = function (scope, itemToUncheck) {
+      //
+    };
+
+    //
+    vm.uncheckAll = function (scope, children) {
+      scope.$broadcast('uncheckall');
+    };
+
+    //
+    // itemToInvert can be passed as a "id" or as a "object" ex:
+    //
+    //  treeviewEl.api.invertCheckItem(357) //357 is a id value or
+    //  treeviewEl.api.invertCheckItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+    //
+    vm.invertCheckItem = function (scope, itemToInvert) {
+      scope.$broadcast('invertcheckitem');
+    };
+
+    //
+    vm.invertAllChecks = function (scope, children) {
+      scope.$broadcast('invertallchecks');
+    };
+
+    //
+    // return only the last level
+    // items array optional param
+    //
+    vm.getCheckedIds = function (scope, items) {
+      var checkedItems = vm.getCheckedItems(scope, items);
+      var checkedIds = [];
+      angular.forEach(checkedItems, function (checkedItem) {
+        checkedIds.push(checkedItem.id);
+      });
+      return checkedIds;
+    };
+
+    //
     vm.getSelectedItem = function (scope) {
       return scope.ctrl.selectedItem;
     };
+
+    //
+    // folderToFind can be passed as a "id" or as a "object" ex:
+    //
+    //  treeviewEl.api.findFolder(456) //456 is a id value or
+    //  treeviewEl.api.findFolder({name: 'Brazil'}) //it will searches for the first folder that match the passed data and leaf is not true
+    //
+    vm.findFolder = function (scope, folderToFind) {
+      var dataToFind = _normalizeDataToFind(folderToFind);
+      var keys = Object.keys(dataToFind);
+      var node = _findNode(scope.ctrl.rootItem.children, dataToFind, keys);
+      if (!node) {
+        throw new Error('Folder not found!');
+      } else {
+        return node;
+      }
+    };
+
+    //
+    // itemToFind can be passed as a "id" or as a "object" ex:
+    //
+    //  treeviewEl.api.findItem(357) //357 is a id value or
+    //  treeviewEl.api.findItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+    //
+    vm.findItem = function (scope, itemToFind) {
+      var dataToFind = _normalizeDataToFind(itemToFind);
+      dataToFind['isLeaf'] = true;
+      var keys = Object.keys(dataToFind);
+      var node = _findNode(scope.ctrl.rootItem.children, dataToFind, keys);
+      if (!node) {
+        throw new Error('Item not found!');
+      } else {
+        return node;
+      }
+    };
+
+    //
+    // folderToFind can be passed as a "id" or as a "object" ex:
+    //
+    //  treeviewEl.api.selectFolder(456) //456 is a id value or
+    //  treeviewEl.api.selectFolder({name: 'Brazil'}) //it will searches for the first folder that match the passed data and leaf is not true
+    //
+    vm.selectFolder = function (scope, folderToFind) {
+      var folder = vm.findFolder(scope, folderToFind);
+      _selectNode(scope, folder);
+    };
+
+    //
+    // itemToFind can be passed as a "id" or as a "object" ex:
+    //
+    //  treeviewEl.api.selectItem(357) //357 is a id value or
+    //  treeviewEl.api.selectItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+    //
+    vm.selectItem = function (scope, itemToFind) {
+      var item = vm.findItem(scope, itemToFind);
+      _selectNode(scope, item);
+    };
+
+    //
+    function _selectNode(scope, node) {
+      //node.expanded = true;
+      //console.log(node);
+      var parentNodes = _getParentNodes(scope, node);
+      angular.forEach(parentNodes, function (parent) {
+        if (!parent.expanded) {
+          parent.expanded = true;
+        }
+      });
+      scope.ctrl.selectedItem = node;
+      scope.$broadcast('scrollintoview', node);
+
+      //if (scope.$$phase) {
+      //scope.$apply();
+      //}
+    }
+
+    //
+    /*
+    function _getParentNodes(scope, node) {
+      let parents = [];
+      let currentNode = node;
+      while (true) {
+        currentNode = currentNode.parent;
+        if (angular.isDefined(currentNode)) {
+          if ((currentNode.root) && (!scope.showRoot)) {
+            break;
+          } else {
+            parents.push(currentNode);
+          }
+        } else {
+          break;
+        }
+      }
+      return parents;
+    }
+    */
+    //
+    function _getParentNodes(scope, node) {
+      var parents = [];
+      var currentNode = node;
+      while (true) {
+        currentNode = _getParentNode(scope, currentNode);
+        if (angular.isDefined(currentNode)) {
+          if (currentNode.root && !scope.showRoot) {
+            break;
+          } else {
+            parents.push(currentNode);
+          }
+        } else {
+          break;
+        }
+      }
+      return parents;
+    }
+
+    //
+    function _getParentNode(scope, node) {
+      if (node.parent === scope.ctrl.rootItem.id) {
+        if (scope.ctrl.showRoot) {
+          return scope.ctrl.rootItem;
+        } else {
+          return undefined;
+        }
+      } else {
+        var parentNode = vm.findFolder(scope, node.parent);
+        return parentNode;
+      }
+    }
+
+    //
+    function _findNode(children, dataToFind, keys) {
+      for (var index = 0; index < children.length; index++) {
+        var child = children[index];
+        var allFieldsAreEqual = true;
+
+        for (var index2 = 0; index2 < keys.length; index2++) {
+          var key = keys[index2];
+
+          if (child[key] !== dataToFind[key]) {
+            allFieldsAreEqual = false;
+          }
+        }
+
+        if (allFieldsAreEqual) {
+          if (child.isLeaf === dataToFind.isLeaf) {
+            return child;
+          }
+        }
+
+        if (child.children) {
+          var searchInChildren = _findNode(child.children, dataToFind, keys);
+          if (searchInChildren) {
+            return searchInChildren;
+          }
+        }
+      }
+    }
+
+    //
+    function _normalizeDataToFind(dataToFind) {
+      var normalizedData = {};
+      if (typeof dataToFind === 'number') {
+        normalizedData['id'] = dataToFind;
+      } else if (typeof dataToFind === 'string') {
+        normalizedData['id'] = parseInt(dataToFind);
+      } else if ((typeof dataToFind === 'undefined' ? 'undefined' : _typeof(dataToFind)) === 'object') {
+        normalizedData = dataToFind;
+      } else {
+        throw new Error('Parameter set in a wrong way.');
+      }
+      return normalizedData;
+    }
 
     //
     // item is a optional param that when it is set data must be an array (children)
@@ -360,6 +541,231 @@
 
   'use strict';
 
+  angular.module('uiDeniTreeview').service('uiDeniTreeviewApiService', uiDeniTreeviewApiService);
+
+  function uiDeniTreeviewApiService() {
+
+    var vm = this;
+
+    //
+    function _getApi(scope, uiDeniTreeviewService) {
+
+      return {
+
+        //
+        checkAll: function checkAll() {
+          return uiDeniTreeviewService.checkAll(scope);
+        },
+
+        //
+        // itemToCheck can be passed as a "id" or as a "object" ex:
+        //
+        //  treeviewEl.api.checkItem(357) //357 is a id value or
+        //  treeviewEl.api.checkItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+        //
+        checkItem: function checkItem(itemToCheck) {
+          return uiDeniTreeviewService.checkItem(scope, itemToCheck);
+        },
+
+        //
+        // folderToFind can be passed as a "id" or as a "object" ex:
+        //
+        //  treeviewEl.api.findFolder(456) //456 is a id value or
+        //  treeviewEl.api.findFolder({name: 'Brazil'}) //it will searches for the first folder that match the passed data and leaf is not true
+        //
+        findFolder: function findFolder(folderToFind) {
+          return uiDeniTreeviewService.findFolder(scope, folderToFind);
+        },
+
+        //
+        // itemToFind can be passed as a "id" or as a "object" ex:
+        //
+        //  treeviewEl.api.findItem(357) //357 is a id value or
+        //  treeviewEl.api.findItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+        //
+        findItem: function findItem(itemToFind) {
+          return uiDeniTreeviewService.findItem(scope, itemToFind);
+        },
+
+        //
+        getCheckedIds: function getCheckedIds() {
+          return uiDeniTreeviewService.getCheckedIds(scope);
+        },
+
+        //
+        getCheckedItems: function getCheckedItems() {
+          return uiDeniTreeviewService.getCheckedItems(scope);
+        },
+
+        //
+        getSelectedItem: function getSelectedItem() {
+          return uiDeniTreeviewService.getSelectedItem(scope);
+        },
+
+        //
+        invertAllChecks: function invertAllChecks() {
+          return uiDeniTreeviewService.invertAllChecks(scope);
+        },
+
+        //
+        // itemToInvert can be passed as a "id" or as a "object" ex:
+        //
+        //  treeviewEl.api.invertCheckItem(357) //357 is a id value or
+        //  treeviewEl.api.invertCheckItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+        //
+        invertCheckItem: function invertCheckItem(itemToInvert) {
+          return uiDeniTreeviewService.invertCheckItem(scope, itemToInvert);
+        },
+
+        //
+        // item is a optional param that when it is set load will return just the children items.
+        //
+        load: function load(item) {
+          return uiDeniTreeviewService.load(scope, item);
+        },
+
+        //
+        // item is a optional param that when it is set load will return just the children items.
+        //
+        loadData: function loadData(data, item) {
+          return uiDeniTreeviewService.loadData(scope, data, item);
+        },
+
+        //
+        reload: function reload() {
+          return uiDeniTreeviewService.reload(scope);
+        },
+
+        //
+        uncheckAll: function uncheckAll() {
+          return uiDeniTreeviewService.uncheckAll(scope);
+        },
+
+        //
+        // folderToFind can be passed as a "id" or as a "object" ex:
+        //
+        //  treeviewEl.api.selectFolder(456) //456 is a id value or
+        //  treeviewEl.api.selectFolder({name: 'Brazil'}) //it will searches for the first folder that match the passed data and leaf is not true
+        //
+        selectFolder: function selectFolder(folderToFind) {
+          uiDeniTreeviewService.selectFolder(scope, folderToFind);
+        },
+
+        //
+        // itemToFind can be passed as a "id" or as a "object" ex:
+        //
+        //  treeviewEl.api.selectItem(357) //357 is a id value or
+        //  treeviewEl.api.selectItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+        //
+        selectItem: function selectItem(itemToFind) {
+          uiDeniTreeviewService.selectItem(scope, itemToFind);
+        },
+
+        //
+        // itemToUncheck can be passed as a "id" or as a "object" ex:
+        //
+        //  treeviewEl.api.uncheckItem(357) //357 is a id value or
+        //  treeviewEl.api.uncheckItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+        //
+        uncheckItem: function uncheckItem(itemToUncheck) {
+          return uiDeniTreeviewService.uncheckItem(scope, itemToUncheck);
+        }
+      };
+    }
+
+    //
+    vm.implementApi = function (scope, element, uiDeniTreeviewService) {
+
+      element.each(function () {
+        angular.element(this).init.prototype.api = _getApi(scope, uiDeniTreeviewService);
+      });
+    };
+  }
+})();
+'use strict';
+
+(function () {
+
+  'use strict';
+
+  angular.module('uiDeniTreeview').service('uiDeniTreeviewItemEventsService', uiDeniTreeviewItemEventsService);
+
+  uiDeniTreeviewItemEventsService.$inject = ['$timeout', 'uiDeniTreeviewItemService', 'uiDeniTreeviewEnum'];
+
+  function uiDeniTreeviewItemEventsService($timeout, uiDeniTreeviewItemService, uiDeniTreeviewEnum) {
+
+    var vm = this;
+
+    //
+    vm.implementEvents = function (scope) {
+
+      //
+      scope.$on('scrollintoview', function (event, itemToView) {
+        //scrollIntoView
+        if (scope.ctrl.item === itemToView) {
+          console.log(itemToView);
+
+          $timeout(function () {
+            scope.ctrl.element.get(0).scrollIntoView(false);
+          });
+        }
+      });
+
+      //
+      scope.$on('checkitem', function (event, itemToCheck) {
+        if (scope.ctrl.item.isLeaf && scope.ctrl.item === itemToCheck) {
+          scope.ctrl.item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED;
+          uiDeniTreeviewItemService.refreshCheckboxStateParents(scope.ctrl);
+        }
+      });
+
+      //
+      scope.$on('checkall', function (event) {
+        if (scope.ctrl.item.isLeaf) {
+          scope.ctrl.item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED;
+          uiDeniTreeviewItemService.refreshCheckboxStateParents(scope.ctrl);
+        }
+      });
+
+      scope.$on('uncheckitem', function (event, itemToUncheck) {
+        if (scope.ctrl.item.isLeaf && scope.ctrl.item === itemToUncheck) {
+          scope.ctrl.item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.UNCHECKED;
+          uiDeniTreeviewItemService.refreshCheckboxStateParents(scope.ctrl);
+        }
+      });
+
+      //
+      scope.$on('uncheckall', function (event) {
+        if (scope.ctrl.item.isLeaf) {
+          scope.ctrl.item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.UNCHECKED;
+          uiDeniTreeviewItemService.refreshCheckboxStateParents(scope.ctrl);
+        }
+      });
+
+      //
+      scope.$on('invertcheckitem', function (event, itemToInvert) {
+        if (scope.ctrl.item.isLeaf && scope.ctrl.item === itemToInvert) {
+          uiDeniTreeviewItemService.invertStateItem(scope.ctrl.item);
+          uiDeniTreeviewItemService.refreshCheckboxStateParents(scope.ctrl);
+        }
+      });
+
+      //
+      scope.$on('invertallchecks', function (event) {
+        if (scope.ctrl.item.isLeaf) {
+          uiDeniTreeviewItemService.invertStateItem(scope.ctrl.item);
+          uiDeniTreeviewItemService.refreshCheckboxStateParents(scope.ctrl);
+        }
+      });
+    };
+  }
+})();
+'use strict';
+
+(function () {
+
+  'use strict';
+
   angular.module('uiDeniTreeview').service('uiDeniTreeviewItemService', uiDeniTreeviewItemService);
 
   uiDeniTreeviewItemService.$inject = ['uiDeniTreeviewEnum'];
@@ -374,6 +780,7 @@
       scope.ctrl.item.expanded = scope.ctrl.item.expanded || false;
       scope.ctrl.hasChild = scope.ctrl.item.children || scope.$parent.ctrl.lazyLoad ? true : false;
       scope.ctrl.root = scope.ctrl.item.root || false;
+      scope.ctrl.item.parent = scope.ctrl.parent.id;
 
       var leftPos = 5 + scope.ctrl.level * scope.$parent.ctrl.marginItems;
       if (!scope.$parent.ctrl.showRoot) {
@@ -452,15 +859,90 @@
 
     //
     vm.expandButtonClick = function (scope, item) {
-      var expanded = !item.expanded;
+      item.expanded = !item.expanded;
+    };
 
-      if (expanded) {
+    //
+    vm.checkboxClick = function (scope, item) {
+      if (vm.isChecked(item)) {
+        vm.uncheckNode(scope, item);
+      } else {
+        vm.checkNode(scope, item);
+      }
+
+      //
+      scope.$emit('oncheck', item);
+    };
+
+    //
+    vm.checkNode = function (scope, item) {
+      item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED;
+      _refreshCheckboxStateChildren(item);
+      vm.refreshCheckboxStateParents(scope.ctrl);
+    };
+
+    //
+    vm.uncheckNode = function (scope, item) {
+      item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.UNCHECKED;
+      _refreshCheckboxStateChildren(item);
+      vm.refreshCheckboxStateParents(scope.ctrl);
+    };
+
+    //
+    vm.invertCheckNode = function (scope, item) {
+      vm.invertStateItem(item);
+      _refreshCheckboxStateChildren(item);
+      vm.refreshCheckboxStateParents(scope.ctrl);
+    };
+
+    //
+    vm.itemMousedown = function (treeviewCtrl, scope, item) {
+      var target = angular.element(event.target);
+      var finishRoutine = function finishRoutine() {
+        treeviewCtrl.selectedItem = item;
+        scope.$emit('onselect', item);
+      };
+
+      if (treeviewCtrl.selectRow) {
+        finishRoutine();
+      } else {
+        if (target.is('.icon-and-text') || target.is('.icon') || target.is('.text-inner') || target.is('.text')) {
+          finishRoutine();
+        }
+      }
+    };
+
+    vm.itemDoubleClick = function (treeview, scope, item) {
+      vm.expandButtonClick(scope, item);
+    };
+
+    vm.isSelected = function (treeviewController, item) {
+      return angular.equals(treeviewController.selectedItem, item);
+    };
+
+    vm.isChecked = function (item) {
+      return item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED;
+    };
+
+    vm.isUnchecked = function (item) {
+      return item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.UNCHECKED;
+    };
+
+    vm.isUndetermined = function (item) {
+      return item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.UNDETERMINED;
+    };
+
+    //
+    vm.expandItem = function (scope, item) {
+      //let expanded = !item.expanded;
+
+      if (item.expanded) {
         (function () {
           scope.ctrl.loading = true;
 
           var finishExpandRoutine = function finishExpandRoutine() {
             if (item.children) {
-              item.expanded = expanded;
+              //item.expanded = expanded;
               _setChildrenVisibility(item.children, true, true);
             }
             scope.ctrl.loading = false;
@@ -480,91 +962,13 @@
           }
         })();
       } else {
-        item.expanded = expanded;
+        //item.expanded = expanded;
         _setChildrenVisibility(item.children, false, true);
       }
     };
 
     //
-    vm.checkboxClick = function (scope, item) {
-      _setCheckboxStateByClicking(item);
-      _refreshCheckboxStateChildren(item);
-      _refreshCheckboxStateParents(scope.ctrl);
-
-      //
-      scope.$emit('oncheck', item);
-    };
-
-    //
-    vm.itemMousedown = function (treeviewCtrl, scope, item) {
-      var target = angular.element(event.target);
-      var finishRoutine = function finishRoutine() {
-        treeviewCtrl.selectedItem = item;
-        scope.$emit('onselect', item);
-      };
-
-      if (treeviewCtrl.selectRow) {
-        finishRoutine();
-      } else {
-        if (target.is('.icon') || target.is('.text-inner') || target.is('.text')) {
-          finishRoutine();
-        }
-      }
-    };
-
-    vm.itemDoubleClick = function (treeview, scope, item) {
-      vm.expandButtonClick(scope, item);
-    };
-
-    vm.isSelected = function (treeview, item) {
-      return angular.equals(treeview.selectedItem, item);
-    };
-
-    vm.isChecked = function (item) {
-      return item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED;
-    };
-
-    vm.isUnchecked = function (item) {
-      return item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.UNCHECKED;
-    };
-
-    vm.isUndetermined = function (item) {
-      return item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.UNDETERMINED;
-    };
-
-    //
-    function _setChildrenVisibility(children, visible, recursively) {
-      if (children) {
-        angular.forEach(children, function (child) {
-          child.hidden = !visible;
-          if (recursively && child.expanded) {
-            _setChildrenVisibility(child.children, visible, recursively);
-          }
-        });
-      }
-    }
-
-    //
-    function _setCheckboxStateByClicking(item) {
-      if (vm.isChecked(item)) {
-        item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.UNCHECKED;
-      } else {
-        item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED;
-      }
-    }
-
-    //
-    function _refreshCheckboxStateChildren(item) {
-      if (item.children) {
-        angular.forEach(item.children, function (child) {
-          child.state = item.state;
-          _refreshCheckboxStateChildren(child);
-        });
-      }
-    }
-
-    //
-    function _refreshCheckboxStateParents(controller) {
+    vm.refreshCheckboxStateParents = function (controller) {
       //
       if (controller && !controller.root && angular.isDefined(controller.parent)) {
         var siblings = _getSiblingsItems(controller);
@@ -582,7 +986,38 @@
           }
         }
 
-        _refreshCheckboxStateParents(controller.parent.ctrl);
+        vm.refreshCheckboxStateParents(controller.parent.ctrl);
+      }
+    };
+
+    //
+    vm.invertStateItem = function (item) {
+      if (vm.isChecked(item)) {
+        item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.UNCHECKED;
+      } else {
+        item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED;
+      }
+    };
+
+    //
+    function _setChildrenVisibility(children, visible, recursively) {
+      if (children) {
+        angular.forEach(children, function (child) {
+          child.hidden = !visible;
+          if (recursively && child.expanded) {
+            _setChildrenVisibility(child.children, visible, recursively);
+          }
+        });
+      }
+    }
+
+    //
+    function _refreshCheckboxStateChildren(item) {
+      if (item.children) {
+        angular.forEach(item.children, function (child) {
+          child.state = item.state;
+          _refreshCheckboxStateChildren(child);
+        });
       }
     }
 
@@ -712,9 +1147,9 @@
 
   angular.module('uiDeniTreeview').directive('uiDeniTreeviewItem', uiDeniTreeviewItem);
 
-  uiDeniTreeviewItem.$inject = ['$templateCache', 'uiDeniTreeviewItemService'];
+  uiDeniTreeviewItem.$inject = ['$templateCache', 'uiDeniTreeviewItemService', 'uiDeniTreeviewItemEventsService'];
 
-  function uiDeniTreeviewItem($templateCache, uiDeniTreeviewItemService) {
+  function uiDeniTreeviewItem($templateCache, uiDeniTreeviewItemService, uiDeniTreeviewItemEventsService) {
 
     return {
       restrict: 'E',
@@ -732,11 +1167,18 @@
       link: function link(scope, element, attr) {
 
         //
+        scope.ctrl.element = angular.element(element);
+
+        //
         uiDeniTreeviewItemService.setDefaultValues(scope, element);
+
+        //
+        uiDeniTreeviewItemEventsService.implementEvents(scope);
 
         //
         scope.$watch('ctrl.item.expanded', function (newValue, oldValue) {
           if (newValue !== oldValue) {
+            uiDeniTreeviewItemService.expandItem(scope, scope.ctrl.item);
             scope.$emit('onexpand', scope.ctrl.item);
           }
         });

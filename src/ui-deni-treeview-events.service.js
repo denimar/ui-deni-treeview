@@ -26,10 +26,12 @@
   		});
 
       //
-      scope.$on('onload', function (event, item, callbackFunction) {
+      /*
+      scope.$on('onload', function (event, item, data) {
         //event.stopPropagation();
         //scope.$emit('onload', item, callbackFunction);
   		});
+      */
 
       //
       scope.$on('onselect', function (event, item) {

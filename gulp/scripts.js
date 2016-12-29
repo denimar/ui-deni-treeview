@@ -18,7 +18,7 @@ module.exports = function() {
     .pipe(addsrc.append('./src/**/*.enum.js'))
     .pipe(addsrc.append('./src/**/*.constant.js'))
     .pipe(addsrc.append('./src/**/*.service.js'))
-    .pipe(addsrc.append('./src/**/*.mock.js'))
+    //.pipe(addsrc.append('./src/**/*.mock.js'))
     .pipe(addsrc.append('./src/**/*.controller.js'))
     .pipe(addsrc.append('./src/**/*.directive.js'))
 
@@ -36,7 +36,8 @@ module.exports = function() {
         if (data.error) {
           return '(' + data.error.line + ':' + data.error.character + ') ' + data.error.reason;
         }
-      }).join('\n');
+        return '';
+      });
 
       var pos = file.relative.lastIndexOf('\\');
       var fileName = file.relative.substr(pos + 1);
@@ -62,8 +63,6 @@ module.exports = function() {
 
     // If eventually happened some error...
     .pipe(uglify().on("error", notify.onError(function(error) {
-      console.log(error);
-
       var pos = error.message.indexOf('js:');
       var message = error.message.substr(pos + 4);
 

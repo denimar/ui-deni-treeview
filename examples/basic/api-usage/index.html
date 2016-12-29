@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" type="text/css" href="../../../dist/ui-deni-treeview.css">
+</head>
+
+<style>
+	.treeview {
+		height: 600px;
+		width: 500px;
+		margin-top: 4px;
+		display: inline-block;
+	}
+	.buttons-container {
+		display: inline-block;
+		vertical-align: top;
+		margin-top: 4px;
+		background-color: #f2f2f2;
+		border: solid 1px #cccccc;
+		padding: 10px;
+		font-family: arial,tahoma;
+		font-size: 12px;
+	}
+	.buttons-container .title {
+			background-color: #004080;
+			color: #e6eeff;
+			margin-bottom: 4px;
+			padding: 4px;
+			font-weight: bold;
+	}
+
+	.buttons-container button {
+		display: block;
+		margin-bottom: 2px;
+	}
+	label {
+		font-family: arial,tahoma;
+		font-size: 12px;
+	}
+	textarea {
+		width: 350px;
+		height: 290px;
+		display: block;
+	}
+
+</style>
+
+<body ng-app="exampleApp">
+
+	<section ng-controller="exampleController as ctrl">
+
+		<label>
+			<b>Theme :</b>
+			<select ng-model="ctrl.theme">
+			  <option value="classic">Classic</option>
+				<option value="metro">Metro</option>
+				<option value="moonlight">Moonlight</option>
+				<option value="purple">Purple</option>
+				<option value="green">Green</option>
+			  <option value="orange">Orange</option>
+			  <option value="red">Red</option>
+			  <option value="silver">Silver</option>
+			</select>
+		</label>
+
+		<div>
+    	<ui-deni-treeview class="treeview" theme="ctrl.theme" url="'https://denimar.github.io/static-data/countries.json'" checkbox=true></ui-deni-treeview>
+			<div class="buttons-container">
+				<div class="title">Click on the buttons and see the results</div>
+
+				<button ng-click="ctrl.reload()"><b>reload :</b> reload data</button>
+
+				<hr />
+
+				<button id="btnSelectAfrica" ng-click="ctrl.selectAfrica()"><b>selectFolder :</b> Select the continent "Africa"</button>
+				<button id="btnSelectBrazil" ng-click="ctrl.selectBrazil()"><b>selectItem :</b> Select the country "Brazil"</button>
+				<button id="btnGetSelectedItem" ng-click="ctrl.getSelectedItem()"><b>getSelectedItem :</b> Get the selected item</button>
+
+				<hr />
+				<button id="btnCheckUnitedStates" ng-click="ctrl.checkUnitedStates()"><b>checkItem :</b> Check the country "United States"</button>
+				<button id="btnCheckedItems" ng-click="ctrl.getCheckedItems()"><b>getCheckedItems :</b> Get checked items</button>
+				<button id="btnCheckedIds" ng-click="ctrl.getCheckedIds()"><b>getCheckedIds :</b> Get checked Ids</button>
+				<button id="btnCheckAll" ng-click="ctrl.checkAll()"><b>checkAll :</b> Check all items</button>
+				<button id="btnuncheckAll" ng-click="ctrl.uncheckAll()"><b>uncheckAll :</b> Uncheck all items</button>
+				<button id="btnInvertAllChecks" ng-click="ctrl.invertAllChecks()"><b>invertAllChecks :</b> Invert the checks from all items</button>
+				<hr />
+				<label>
+					Results:
+					<textarea id="memResults"></textarea>
+				</label>
+			</div>
+		</div>
+
+  </section>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.2/angular.min.js"></script>
+
+	<script src="../../../dist/ui-deni-treeview.js"></script>
+
+	<script src="script.js"></script>
+</body>
+</html>

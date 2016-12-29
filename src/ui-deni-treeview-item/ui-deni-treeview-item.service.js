@@ -18,6 +18,7 @@
       scope.ctrl.item.expanded = scope.ctrl.item.expanded || false;
       scope.ctrl.hasChild = (scope.ctrl.item.children || scope.$parent.ctrl.lazyLoad) ? true : false;
       scope.ctrl.root = scope.ctrl.item.root || false;
+      scope.ctrl.item.parent = scope.ctrl.parent.id;
 
       let leftPos = 5 + scope.ctrl.level * scope.$parent.ctrl.marginItems;
       if (!scope.$parent.ctrl.showRoot) {
@@ -96,14 +97,90 @@
 
     //
     vm.expandButtonClick = function(scope, item) {
-      let expanded = !item.expanded;
+      item.expanded = !item.expanded;
+    };
 
-      if (expanded) {
+    //
+    vm.checkboxClick = function(scope, item) {
+      if (vm.isChecked(item)) {
+        vm.uncheckNode(scope, item);
+      } else {
+        vm.checkNode(scope, item);
+      }
+
+      //
+      scope.$emit('oncheck', item);
+    };
+
+    //
+    vm.checkNode = function(scope, item) {
+      item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED;
+      _refreshCheckboxStateChildren(item);
+      vm.refreshCheckboxStateParents(scope.ctrl);
+    };
+
+    //
+    vm.uncheckNode = function(scope, item) {
+      item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.UNCHECKED;
+      _refreshCheckboxStateChildren(item);
+      vm.refreshCheckboxStateParents(scope.ctrl);
+    };
+
+    //
+    vm.invertCheckNode = function(scope, item) {
+      vm.invertStateItem(item);
+      _refreshCheckboxStateChildren(item);
+      vm.refreshCheckboxStateParents(scope.ctrl);
+    };
+
+
+    //
+    vm.itemMousedown = function(treeviewCtrl, scope, item) {
+      let target = angular.element(event.target);
+      let finishRoutine = function() {
+        treeviewCtrl.selectedItem = item;
+        scope.$emit('onselect', item);
+      };
+
+      if (treeviewCtrl.selectRow) {
+        finishRoutine();
+      } else {
+        if ((target.is('.icon-and-text')) || (target.is('.icon')) || (target.is('.text-inner')) || (target.is('.text'))) {
+          finishRoutine();
+        }
+      }
+    };
+
+    vm.itemDoubleClick = function(treeview, scope, item) {
+      vm.expandButtonClick(scope, item);
+    };
+
+    vm.isSelected = function(treeviewController, item) {
+      return angular.equals(treeviewController.selectedItem, item);
+    };
+
+    vm.isChecked = function(item) {
+      return item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED;
+    };
+
+    vm.isUnchecked = function(item) {
+      return item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.UNCHECKED;
+    };
+
+    vm.isUndetermined = function(item) {
+      return item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.UNDETERMINED;
+    };
+
+    //
+    vm.expandItem = function(scope, item) {
+      //let expanded = !item.expanded;
+
+      if (item.expanded) {
         scope.ctrl.loading = true;
 
         let finishExpandRoutine = function() {
           if (item.children) {
-            item.expanded = expanded;
+            //item.expanded = expanded;
             _setChildrenVisibility(item.children, true, true);
           }
           scope.ctrl.loading = false;
@@ -122,91 +199,13 @@
           finishExpandRoutine();
         }
       } else {
-        item.expanded = expanded;
+        //item.expanded = expanded;
         _setChildrenVisibility(item.children, false, true);
       }
     };
 
     //
-    vm.checkboxClick = function(scope, item) {
-      _setCheckboxStateByClicking(item);
-      _refreshCheckboxStateChildren(item);
-      _refreshCheckboxStateParents(scope.ctrl);
-
-      //
-      scope.$emit('oncheck', item);
-    };
-
-    //
-    vm.itemMousedown = function(treeviewCtrl, scope, item) {
-      let target = angular.element(event.target);
-      let finishRoutine = function() {
-        treeviewCtrl.selectedItem = item;
-        scope.$emit('onselect', item);
-      };
-
-      if (treeviewCtrl.selectRow) {
-        finishRoutine();
-      } else {
-        if ((target.is('.icon')) || (target.is('.text-inner')) || (target.is('.text'))) {
-          finishRoutine();
-        }
-      }
-    };
-
-    vm.itemDoubleClick = function(treeview, scope, item) {
-      vm.expandButtonClick(scope, item);
-    };
-
-    vm.isSelected = function(treeview, item) {
-      return angular.equals(treeview.selectedItem, item);
-    };
-
-    vm.isChecked = function(item) {
-      return item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED;
-    };
-
-    vm.isUnchecked = function(item) {
-      return item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.UNCHECKED;
-    };
-
-    vm.isUndetermined = function(item) {
-      return item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.UNDETERMINED;
-    };
-
-    //
-    function _setChildrenVisibility(children, visible, recursively) {
-      if (children) {
-        angular.forEach(children, function(child) {
-          child.hidden = !visible;
-          if (recursively && child.expanded) {
-            _setChildrenVisibility(child.children, visible, recursively);
-          }
-        });
-      }
-    }
-
-    //
-    function _setCheckboxStateByClicking(item) {
-      if (vm.isChecked(item)) {
-        item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.UNCHECKED;
-      } else {
-        item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED;
-      }
-    }
-
-    //
-    function _refreshCheckboxStateChildren(item) {
-      if (item.children) {
-        angular.forEach(item.children, function(child) {
-          child.state = item.state;
-          _refreshCheckboxStateChildren(child);
-        });
-      }
-    }
-
-    //
-    function _refreshCheckboxStateParents(controller) {
+    vm.refreshCheckboxStateParents = function(controller) {
       //
       if ((controller) && (!controller.root) && (angular.isDefined(controller.parent))) {
         let siblings = _getSiblingsItems(controller);
@@ -224,7 +223,38 @@
           }
         }
 
-        _refreshCheckboxStateParents(controller.parent.ctrl);
+        vm.refreshCheckboxStateParents(controller.parent.ctrl);
+      }
+    }
+
+    //
+    vm.invertStateItem = function(item) {
+      if (vm.isChecked(item)) {
+        item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.UNCHECKED;
+      } else {
+        item.state = uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED;
+      }
+    }
+
+    //
+    function _setChildrenVisibility(children, visible, recursively) {
+      if (children) {
+        angular.forEach(children, function(child) {
+          child.hidden = !visible;
+          if (recursively && child.expanded) {
+            _setChildrenVisibility(child.children, visible, recursively);
+          }
+        });
+      }
+    }
+
+    //
+    function _refreshCheckboxStateChildren(item) {
+      if (item.children) {
+        angular.forEach(item.children, function(child) {
+          child.state = item.state;
+          _refreshCheckboxStateChildren(child);
+        });
       }
     }
 

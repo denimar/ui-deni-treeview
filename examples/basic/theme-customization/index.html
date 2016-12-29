@@ -2,16 +2,21 @@
 <html>
 <head>
 	<link rel="stylesheet" type="text/css" href="../../../dist/ui-deni-treeview.css">
+	<link rel="stylesheet" type="text/css" href="style.css">
 </head>
 
 <style>
-	.treeview {
-		height: 400px;
-		width: 600px;
+	.myTreeview {
+		height: 600px;
+		width: 500px;
 		margin-top: 4px;
 	}
 	label {
 		font-family: arial,tahoma;
+		font-size: 12px;
+	}
+	p {
+		font-family: arial;
 		font-size: 12px;
 	}
 </style>
@@ -20,21 +25,8 @@
 
 	<section ng-controller="exampleController as ctrl">
 
-		<label>
-			<b>Theme :</b>
-			<select ng-model="ctrl.theme">
-			  <option value="classic">Classic</option>
-				<option value="metro">Metro</option>
-				<option value="moonlight">Moonlight</option>
-				<option value="purple">Purple</option>
-				<option value="green">Green</option>
-			  <option value="orange">Orange</option>
-			  <option value="red">Red</option>
-			  <option value="silver">Silver</option>
-			</select>
-		</label>
-
-    <ui-deni-treeview class="treeview" theme="ctrl.theme" url="'https://denimar.github.io/static-data/countries.json'"></ui-deni-treeview>
+		<p>Take a look at de css file from this example and be free to styling the way you want, for example changing its icons, font family, font size, row height, vertical scrollbar appearance and so on...</p>
+    <ui-deni-treeview class="myTreeview" url="'https://denimar.github.io/static-data/dogs.json'"></ui-deni-treeview>
 
   </section>
 

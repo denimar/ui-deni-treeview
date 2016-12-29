@@ -6,9 +6,9 @@
     .module('uiDeniTreeview')
     .service('uiDeniTreeviewService', uiDeniTreeviewService);
 
-  uiDeniTreeviewService.$inject = ['$http', '$q', 'uiDeniTreeviewEnum', 'uiDeniTreeviewApiService', 'uiDeniTreeviewConstant'];
+  uiDeniTreeviewService.$inject = ['$http', '$q', '$timeout', 'uiDeniTreeviewEnum', 'uiDeniTreeviewApiService', 'uiDeniTreeviewConstant'];
 
-  function uiDeniTreeviewService($http, $q, uiDeniTreeviewEnum, uiDeniTreeviewApiService, uiDeniTreeviewConstant) {
+  function uiDeniTreeviewService($http, $q, $timeout, uiDeniTreeviewEnum, uiDeniTreeviewApiService, uiDeniTreeviewConstant) {
 
     let vm = this;
 
@@ -62,6 +62,9 @@
         $http.get(scope.ctrl.url, dataConfig).then(function(response) {
           _loadData(scope.ctrl, uiDeniTreeviewConstant, response.data, item);
           deferred.resolve(response.data);
+          $timeout(function() {
+            scope.$emit('onload', response.data);
+          });
         }, function(response) {
           let msg = 'Error loading data.';
           throw new Error(msg);
@@ -94,38 +97,38 @@
 
     //
     vm.reload = function(scope) {
-      vm.load(scope);
+      return vm.load(scope);
     };
 
     //
     // return only the last level
     // items array optional param
     //
-    vm.getCheckedItems = function(scope, items) {
+    vm.getCheckedItems = function(scope, children) {
       let checkedItems = [];
-      let itemsToAnalyze = items || scope.ctrl.items;
+      let itemsToAnalyze = children || scope.ctrl.rootItem.children;
 
       angular.forEach(itemsToAnalyze, function(item) {
 
-        if (item.type === 'VD') {
+        if (item.isLeaf) {
           if (item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED) {
-            checkedItems.push(item.id);
+            checkedItems.push(item);
           }
         } else {
           //when is checked but not expanded must see who are its children
           if (angular.isDefined(item.state) && item.state !== uiDeniTreeviewEnum.CHECKBOX_STATE.UNCHECKED) {
 
-            let children = item.children;
+            let itemChildren = item.children;
             if (!item.expanded && item.state === uiDeniTreeviewEnum.CHECKBOX_STATE.CHECKED) {
               let itemCopy = angular.copy(item);
               scope.$emit('onexpanditem', itemCopy);
-              children = itemCopy.children;
+              itemChildren = itemCopy.children;
               _refreshCheckboxStateChildren(itemCopy);
             }
 
-            if (children) {
-              let selecteds = vm.getCheckedItems(scope, children);
-              checkedItems = checkedItems.concat(selecteds);
+            if (itemChildren) {
+              let checkeds = vm.getCheckedItems(scope, itemChildren);
+              checkedItems = checkedItems.concat(checkeds);
             }
           }
         }
@@ -135,9 +138,242 @@
     };
 
     //
+    // itemToCheck can be passed as a "id" or as a "object" ex:
+    //
+    //  treeviewEl.api.checkItem(357) //357 is a id value or
+    //  treeviewEl.api.checkItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+    //
+    vm.checkItem = function(scope, itemToCheck) {
+      let item = vm.findItem(scope, itemToCheck);
+      //
+      scope.$broadcast('checkitem', item);
+    };
+
+    //
+    vm.checkAll = function(scope, children) {
+      scope.$broadcast('checkall');
+    };
+
+    //
+    // itemToUncheck can be passed as a "id" or as a "object" ex:
+    //
+    //  treeviewEl.api.uncheckItem(357) //357 is a id value or
+    //  treeviewEl.api.uncheckItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+    //
+    vm.uncheckItem = function(scope, itemToUncheck) {
+      //
+    };
+
+    //
+    vm.uncheckAll = function(scope, children) {
+      scope.$broadcast('uncheckall');
+    };
+
+    //
+    // itemToInvert can be passed as a "id" or as a "object" ex:
+    //
+    //  treeviewEl.api.invertCheckItem(357) //357 is a id value or
+    //  treeviewEl.api.invertCheckItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+    //
+    vm.invertCheckItem = function(scope, itemToInvert) {
+      scope.$broadcast('invertcheckitem');
+    };
+
+    //
+    vm.invertAllChecks = function(scope, children) {
+      scope.$broadcast('invertallchecks');
+    };
+
+    //
+    // return only the last level
+    // items array optional param
+    //
+    vm.getCheckedIds = function(scope, items) {
+      let checkedItems = vm.getCheckedItems(scope, items);
+      let checkedIds = [];
+      angular.forEach(checkedItems, function(checkedItem) {
+        checkedIds.push(checkedItem.id);
+      });
+      return checkedIds;
+    };
+
+
+    //
     vm.getSelectedItem = function(scope) {
       return scope.ctrl.selectedItem;
     };
+
+    //
+    // folderToFind can be passed as a "id" or as a "object" ex:
+    //
+    //  treeviewEl.api.findFolder(456) //456 is a id value or
+    //  treeviewEl.api.findFolder({name: 'Brazil'}) //it will searches for the first folder that match the passed data and leaf is not true
+    //
+    vm.findFolder = function(scope, folderToFind) {
+      let dataToFind = _normalizeDataToFind(folderToFind);
+      let keys = Object.keys(dataToFind);
+      let node = _findNode(scope.ctrl.rootItem.children, dataToFind, keys);
+      if (!node) {
+        throw new Error('Folder not found!');
+      } else {
+        return node;
+      }
+    };
+
+    //
+    // itemToFind can be passed as a "id" or as a "object" ex:
+    //
+    //  treeviewEl.api.findItem(357) //357 is a id value or
+    //  treeviewEl.api.findItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+    //
+    vm.findItem = function(scope, itemToFind) {
+      let dataToFind = _normalizeDataToFind(itemToFind);
+      dataToFind['isLeaf'] = true;
+      let keys = Object.keys(dataToFind);
+      let node = _findNode(scope.ctrl.rootItem.children, dataToFind, keys);
+      if (!node) {
+        throw new Error('Item not found!');
+      } else {
+        return node;
+      }
+    };
+
+    //
+    // folderToFind can be passed as a "id" or as a "object" ex:
+    //
+    //  treeviewEl.api.selectFolder(456) //456 is a id value or
+    //  treeviewEl.api.selectFolder({name: 'Brazil'}) //it will searches for the first folder that match the passed data and leaf is not true
+    //
+    vm.selectFolder = function(scope, folderToFind) {
+      let folder = vm.findFolder(scope, folderToFind);
+      _selectNode(scope, folder);
+    };
+
+    //
+    // itemToFind can be passed as a "id" or as a "object" ex:
+    //
+    //  treeviewEl.api.selectItem(357) //357 is a id value or
+    //  treeviewEl.api.selectItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
+    //
+    vm.selectItem = function(scope, itemToFind) {
+      let item = vm.findItem(scope, itemToFind);
+      _selectNode(scope, item);
+    };
+
+    //
+    function _selectNode(scope, node) {
+      //node.expanded = true;
+      //console.log(node);
+      let parentNodes = _getParentNodes(scope, node);
+      angular.forEach(parentNodes, function(parent) {
+        if (!parent.expanded) {
+          parent.expanded = true;
+        }
+      });
+      scope.ctrl.selectedItem = node;
+      scope.$broadcast('scrollintoview', node);
+
+      //if (scope.$$phase) {
+        //scope.$apply();
+      //}
+    }
+
+    //
+    /*
+    function _getParentNodes(scope, node) {
+      let parents = [];
+      let currentNode = node;
+      while (true) {
+        currentNode = currentNode.parent;
+        if (angular.isDefined(currentNode)) {
+          if ((currentNode.root) && (!scope.showRoot)) {
+            break;
+          } else {
+            parents.push(currentNode);
+          }
+        } else {
+          break;
+        }
+      }
+      return parents;
+    }
+    */
+    //
+    function _getParentNodes(scope, node) {
+      let parents = [];
+      let currentNode = node;
+      while (true) {
+        currentNode = _getParentNode(scope, currentNode);
+        if (angular.isDefined(currentNode)) {
+          if ((currentNode.root) && (!scope.showRoot)) {
+            break;
+          } else {
+            parents.push(currentNode);
+          }
+        } else {
+          break;
+        }
+      }
+      return parents;
+    }
+
+    //
+    function _getParentNode(scope, node) {
+      if (node.parent === scope.ctrl.rootItem.id) {
+        if (scope.ctrl.showRoot) {
+          return scope.ctrl.rootItem;
+        } else {
+          return undefined;
+        }
+      } else {
+        var parentNode = vm.findFolder(scope, node.parent);
+        return parentNode;
+      }
+    }
+
+    //
+    function _findNode(children, dataToFind, keys) {
+      for (let index = 0 ; index < children.length ; index++) {
+        let child = children[index];
+        let allFieldsAreEqual = true;
+
+        for (let index2 = 0 ; index2 < keys.length ; index2++) {
+          let key = keys[index2];
+
+          if (child[key] !== dataToFind[key]) {
+            allFieldsAreEqual = false;
+          }
+        }
+
+        if (allFieldsAreEqual) {
+          if (child.isLeaf === dataToFind.isLeaf) {
+            return child;
+          }
+        }
+
+        if (child.children) {
+          let searchInChildren = _findNode(child.children, dataToFind, keys);
+          if (searchInChildren) {
+            return searchInChildren;
+          }
+        }
+      }
+    }
+
+    //
+    function _normalizeDataToFind(dataToFind) {
+      let normalizedData = {};
+      if (typeof  dataToFind === 'number') {
+        normalizedData['id'] = dataToFind;
+      } else if (typeof  dataToFind === 'string') {
+        normalizedData['id'] = parseInt(dataToFind);
+      } else if (typeof  dataToFind === 'object') {
+        normalizedData = dataToFind;
+      } else {
+        throw new Error('Parameter set in a wrong way.');
+      }
+      return normalizedData;
+    }
 
     //
     // item is a optional param that when it is set data must be an array (children)
