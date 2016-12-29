@@ -46,10 +46,10 @@
       let deferred = $q.defer();
 
       let currentItem = item || scope.ctrl.rootItem;
-      let itemToLoad = angular.copy(currentItem);
 
       //
       if (scope.ctrl.url) {
+        let itemToLoad = angular.copy(currentItem);
         let dataConfig = {
           params: {
             lazyLoad: scope.ctrl.lazyLoad,
