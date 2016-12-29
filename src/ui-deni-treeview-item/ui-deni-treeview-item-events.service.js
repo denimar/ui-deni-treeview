@@ -19,8 +19,6 @@
       scope.$on('scrollintoview', function (event, itemToView) {
         //scrollIntoView
         if (scope.ctrl.item === itemToView) {
-          console.log(itemToView);
-
           $timeout(function() {
             scope.ctrl.element.get(0).scrollIntoView(false);
           });

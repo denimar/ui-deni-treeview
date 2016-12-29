@@ -10,7 +10,7 @@
 
   exampleController.$inject = ['$scope', '$timeout'];
 
-  function exampleController($scope, $timeout) {
+  function exampleController($scope) {
 
     //select the first item when the records are loaded
     $scope.$on('onload', function (event, data) {
