@@ -45,8 +45,6 @@
     vm.load = function(scope, item) {
       let deferred = $q.defer();
 
-      let config = {};
-
       let currentItem = item || scope.ctrl.rootItem;
       let itemToLoad = angular.copy(currentItem);
 
@@ -65,7 +63,7 @@
           $timeout(function() {
             scope.$emit('onload', response.data);
           });
-        }, function(response) {
+        }, function() {
           let msg = 'Error loading data.';
           throw new Error(msg);
         });
@@ -150,7 +148,7 @@
     };
 
     //
-    vm.checkAll = function(scope, children) {
+    vm.checkAll = function(scope) {
       scope.$broadcast('checkall');
     };
 
@@ -161,11 +159,13 @@
     //  treeviewEl.api.uncheckItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
     //
     vm.uncheckItem = function(scope, itemToUncheck) {
+      let item = vm.findItem(scope, itemToCheck);
       //
+      scope.$broadcast('uncheckitem', item);
     };
 
     //
-    vm.uncheckAll = function(scope, children) {
+    vm.uncheckAll = function(scope) {
       scope.$broadcast('uncheckall');
     };
 
@@ -176,11 +176,11 @@
     //  treeviewEl.api.invertCheckItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
     //
     vm.invertCheckItem = function(scope, itemToInvert) {
-      scope.$broadcast('invertcheckitem');
+      scope.$broadcast('invertcheckitem', itemToInvert);
     };
 
     //
-    vm.invertAllChecks = function(scope, children) {
+    vm.invertAllChecks = function(scope) {
       scope.$broadcast('invertallchecks');
     };
 
@@ -262,8 +262,6 @@
 
     //
     function _selectNode(scope, node) {
-      //node.expanded = true;
-      //console.log(node);
       let parentNodes = _getParentNodes(scope, node);
       angular.forEach(parentNodes, function(parent) {
         if (!parent.expanded) {
@@ -272,32 +270,8 @@
       });
       scope.ctrl.selectedItem = node;
       scope.$broadcast('scrollintoview', node);
-
-      //if (scope.$$phase) {
-        //scope.$apply();
-      //}
     }
 
-    //
-    /*
-    function _getParentNodes(scope, node) {
-      let parents = [];
-      let currentNode = node;
-      while (true) {
-        currentNode = currentNode.parent;
-        if (angular.isDefined(currentNode)) {
-          if ((currentNode.root) && (!scope.showRoot)) {
-            break;
-          } else {
-            parents.push(currentNode);
-          }
-        } else {
-          break;
-        }
-      }
-      return parents;
-    }
-    */
     //
     function _getParentNodes(scope, node) {
       let parents = [];
@@ -358,6 +332,7 @@
           }
         }
       }
+      return null;
     }
 
     //
