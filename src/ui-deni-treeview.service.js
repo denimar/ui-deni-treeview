@@ -159,7 +159,7 @@
     //  treeviewEl.api.uncheckItem({name: 'Dog'}) //it will searches for the first item that match the passed data and leaf is true
     //
     vm.uncheckItem = function(scope, itemToUncheck) {
-      let item = vm.findItem(scope, itemToCheck);
+      let item = vm.findItem(scope, itemToUncheck);
       //
       scope.$broadcast('uncheckitem', item);
     };
